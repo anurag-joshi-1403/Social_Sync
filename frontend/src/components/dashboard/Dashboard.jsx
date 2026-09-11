@@ -1,56 +1,23 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import StatsCard from './StatsCard';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { usePosts } from '../../context/PostsContext.jsx';
+import StatsCard from './StatsCard.jsx';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { posts } = usePosts();
 
-  // Mock data — will be replaced with real API calls later
-  const stats = {
-    total: 42,
-    scheduled: 8,
-    published: 30,
-    drafts: 4,
-  };
+  const stats = useMemo(() => {
+    return {
+      total: posts.length,
+      scheduled: posts.filter((p) => p.status === 'scheduled').length,
+      published: posts.filter((p) => p.status === 'published').length,
+      drafts: posts.filter((p) => p.status === 'draft').length,
+    };
+  }, [posts]);
 
-  const recentPosts = [
-    {
-      id: 1,
-      content: 'Good things brew here. Our doors are officially open!',
-      platform: 'Instagram',
-      status: 'published',
-      date: '2026-09-09 10:30',
-    },
-    {
-      id: 2,
-      content: 'Our biggest sale of the year is here. Up to 40% off!',
-      platform: 'Facebook',
-      status: 'scheduled',
-      date: '2026-09-12 18:00',
-    },
-    {
-      id: 3,
-      content: "We're expanding our engineering team...",
-      platform: 'LinkedIn',
-      status: 'scheduled',
-      date: '2026-09-14 09:00',
-    },
-    {
-      id: 4,
-      content: 'Progress, not perfection. Small steps win.',
-      platform: 'X (Twitter)',
-      status: 'draft',
-      date: '—',
-    },
-    {
-      id: 5,
-      content: 'Behind the scenes at our studio today ☕',
-      platform: 'Instagram',
-      status: 'published',
-      date: '2026-09-05 15:45',
-    },
-  ];
+  const recentPosts = posts.slice(0, 5);
 
   const statusBadge = (status) => {
     const map = {
@@ -62,13 +29,20 @@ const Dashboard = () => {
     return `badge bg-${map[status] || 'secondary'} text-capitalize`;
   };
 
+  const formatDate = (post) => {
+    if (!post.scheduledTime) return '—';
+    return new Date(post.scheduledTime).toLocaleString();
+  };
+
   return (
     <div>
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center flex-wrap mb-4">
         <div>
           <h2 className="page-title mb-1">Welcome back, {user?.name} 👋</h2>
-          <p className="page-subtitle mb-0">Here's a quick overview of your content activity.</p>
+          <p className="page-subtitle mb-0">
+            Here's a quick overview of your content activity.
+          </p>
         </div>
         <Link to="/editor" className="btn btn-primary mt-3 mt-md-0">
           <i className="bi bi-plus-lg me-1"></i>
@@ -92,34 +66,58 @@ const Dashboard = () => {
             View All
           </Link>
         </div>
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
-            <thead className="table-light">
-              <tr>
-                <th>Content</th>
-                <th>Platform</th>
-                <th>Status</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentPosts.map((post) => (
-                <tr key={post.id}>
-                  <td className="text-truncate" style={{ maxWidth: '280px' }}>
-                    {post.content}
-                  </td>
-                  <td>
-                    <span className="text-muted small">{post.platform}</span>
-                  </td>
-                  <td>
-                    <span className={statusBadge(post.status)}>{post.status}</span>
-                  </td>
-                  <td className="text-muted small">{post.date}</td>
+
+        {recentPosts.length === 0 ? (
+          <div className="card-body text-center py-5 text-muted">
+            <i className="bi bi-inbox fs-1 d-block mb-2"></i>
+            <p className="mb-3">You haven't created any posts yet.</p>
+            <Link to="/editor" className="btn btn-primary btn-sm">
+              <i className="bi bi-plus-lg me-1"></i>
+              Create your first post
+            </Link>
+          </div>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-hover align-middle mb-0">
+              <thead className="table-light">
+                <tr>
+                  <th>Content</th>
+                  <th>Platform</th>
+                  <th>Status</th>
+                  <th>Date</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {recentPosts.map((post) => (
+                  <tr key={post.id}>
+                    <td className="text-truncate" style={{ maxWidth: '280px' }}>
+                      <div className="d-flex align-items-center">
+                        {post.image && (
+                          <img
+                            src={post.image}
+                            alt="thumb"
+                            className="me-2 rounded"
+                            style={{ width: 32, height: 32, objectFit: 'cover' }}
+                          />
+                        )}
+                        <span>{post.content}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="text-muted small text-capitalize">
+                        {post.platform}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={statusBadge(post.status)}>{post.status}</span>
+                    </td>
+                    <td className="text-muted small">{formatDate(post)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
