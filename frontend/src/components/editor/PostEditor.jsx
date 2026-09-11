@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { usePosts } from '../../context/PostsContext.jsx';
-import { generateContent } from '../../services/mockApi';
-import ContentOptionCard from './ContentOptionCard';
+import { generateContent } from '../../services/mockApi.js';
+import ContentOptionCard from './ContentOptionCard.jsx';
 
 const PostEditor = () => {
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm({
@@ -22,7 +22,9 @@ const PostEditor = () => {
   const [finalCaption, setFinalCaption] = useState('');
   const [finalHashtags, setFinalHashtags] = useState('');
   const [imagePreview, setImagePreview] = useState(null);
+  const [scheduleTime, setScheduleTime] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
   const topicValue = watch('topic');
 
@@ -64,7 +66,10 @@ const PostEditor = () => {
 
   // ---------- Save Draft ----------
   const handleSaveDraft = () => {
-    if (!finalCaption.trim()) return;
+    if (!finalCaption.trim()) {
+      showError('Please add caption content before saving.');
+      return;
+    }
     addPost({
       content: finalCaption,
       hashtags: finalHashtags,
@@ -78,10 +83,21 @@ const PostEditor = () => {
     resetForm();
   };
 
-  // ---------- Schedule (placeholder until Step 4) ----------
-  const handleScheduleClick = () => {
-    if (!finalCaption.trim()) return;
-    // We'll build the full scheduler in Step 4. For now, save as scheduled with a dummy time.
+  // ---------- Schedule Post ----------
+  const handleSchedulePost = () => {
+    if (!finalCaption.trim()) {
+      showError('Please add caption content before scheduling.');
+      return;
+    }
+    if (!scheduleTime) {
+      showError('Please choose a date and time for the post.');
+      return;
+    }
+    const scheduledDate = new Date(scheduleTime);
+    if (scheduledDate <= new Date()) {
+      showError('Please choose a future date and time.');
+      return;
+    }
     addPost({
       content: finalCaption,
       hashtags: finalHashtags,
@@ -89,15 +105,23 @@ const PostEditor = () => {
       tone: watch('tone'),
       image: imagePreview,
       status: 'scheduled',
-      scheduledTime: new Date(Date.now() + 3600 * 1000).toISOString(),
+      scheduledTime: scheduledDate.toISOString(),
     });
-    showSuccess('Post scheduled! (Full calendar coming next step.)');
+    showSuccess('Post scheduled successfully!');
     resetForm();
+    setTimeout(() => navigate('/schedule'), 1200);
   };
 
   const showSuccess = (msg) => {
     setSuccessMsg(msg);
+    setErrorMsg('');
     setTimeout(() => setSuccessMsg(''), 2500);
+  };
+
+  const showError = (msg) => {
+    setErrorMsg(msg);
+    setSuccessMsg('');
+    setTimeout(() => setErrorMsg(''), 3000);
   };
 
   const resetForm = () => {
@@ -107,6 +131,7 @@ const PostEditor = () => {
     setFinalCaption('');
     setFinalHashtags('');
     setImagePreview(null);
+    setScheduleTime('');
   };
 
   return (
@@ -125,9 +150,15 @@ const PostEditor = () => {
           {successMsg}
         </div>
       )}
+      {errorMsg && (
+        <div className="alert alert-danger d-flex align-items-center">
+          <i className="bi bi-exclamation-circle-fill me-2"></i>
+          {errorMsg}
+        </div>
+      )}
 
       <div className="row g-4">
-        {/* ----------------- Left: Form + Options ----------------- */}
+        {/* Left */}
         <div className="col-lg-8">
           {/* Input Form */}
           <div className="card shadow-sm mb-4">
@@ -247,7 +278,7 @@ const PostEditor = () => {
               <div className="card-body">
                 <h5 className="fw-semibold mb-3">
                   <i className="bi bi-pencil-square me-2 text-primary"></i>
-                  3. Refine & save
+                  3. Refine & schedule
                 </h5>
 
                 <div className="mb-3">
@@ -270,8 +301,26 @@ const PostEditor = () => {
                   />
                 </div>
 
+                <div className="mb-3">
+                  <label className="form-label">
+                    <i className="bi bi-calendar-event me-1"></i>
+                    Schedule Date &amp; Time
+                  </label>
+                  <input
+                    type="datetime-local"
+                    className="form-control"
+                    value={scheduleTime}
+                    onChange={(e) => setScheduleTime(e.target.value)}
+                    min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+                  />
+                  <small className="text-muted">
+                    Choose a future date and time. Required for scheduling.
+                  </small>
+                </div>
+
                 <div className="d-flex gap-2 flex-wrap">
                   <button
+                    type="button"
                     className="btn btn-outline-secondary"
                     onClick={handleSaveDraft}
                   >
@@ -279,13 +328,15 @@ const PostEditor = () => {
                     Save as Draft
                   </button>
                   <button
+                    type="button"
                     className="btn btn-success"
-                    onClick={handleScheduleClick}
+                    onClick={handleSchedulePost}
                   >
                     <i className="bi bi-calendar-plus me-2"></i>
                     Schedule Post
                   </button>
                   <button
+                    type="button"
                     className="btn btn-link ms-auto"
                     onClick={resetForm}
                   >
@@ -297,7 +348,7 @@ const PostEditor = () => {
           )}
         </div>
 
-        {/* ----------------- Right: Preview ----------------- */}
+        {/* Right: Preview */}
         <div className="col-lg-4">
           <div className="card shadow-sm sticky-top" style={{ top: '1rem' }}>
             <div className="card-body">
@@ -306,12 +357,19 @@ const PostEditor = () => {
               </h6>
               <div className="preview-card border rounded p-3">
                 <div className="d-flex align-items-center mb-3">
-                  <div className="user-avatar me-2" style={{ width: 32, height: 32, fontSize: '0.8rem' }}>
+                  <div
+                    className="user-avatar me-2"
+                    style={{ width: 32, height: 32, fontSize: '0.8rem' }}
+                  >
                     {(topicValue || 'P').charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <div className="fw-semibold small">Your Brand</div>
-                    <div className="text-muted small">Just now</div>
+                    <div className="text-muted small">
+                      {scheduleTime
+                        ? `Scheduled: ${new Date(scheduleTime).toLocaleString()}`
+                        : 'Just now'}
+                    </div>
                   </div>
                 </div>
                 {imagePreview && (
@@ -344,4 +402,4 @@ const PostEditor = () => {
   );
 };
 
-export default PostEditor; 
+export default PostEditor;
