@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { usePosts } from '../../context/PostsContext.jsx';
-import { generateContent } from '../../services/mockApi.js';
 import ContentOptionCard from './ContentOptionCard.jsx';
+import { useAccounts, PLATFORMS } from '../../context/AccountsContext.jsx';
 
 const PostEditor = () => {
   const { register, handleSubmit, watch, reset, formState: { errors } } = useForm({
@@ -14,6 +14,7 @@ const PostEditor = () => {
     },
   });
   const navigate = useNavigate();
+  const { accounts } = useAccounts();
   const { addPost } = usePosts();
 
   const [loading, setLoading] = useState(false);
@@ -144,6 +145,20 @@ const PostEditor = () => {
         </p>
       </div>
 
+      {/* Warning: no accounts connected */}
+      {accounts.length === 0 && (
+        <div className="alert alert-warning d-flex align-items-center">
+          <i className="bi bi-exclamation-triangle-fill me-2"></i>
+          <div>
+            You haven't connected any social accounts yet.{' '}
+            <Link to="/accounts" className="alert-link">
+              Connect one now
+            </Link>{' '}
+            to start creating posts.
+          </div>
+        </div>
+      )}
+
       {successMsg && (
         <div className="alert alert-success d-flex align-items-center">
           <i className="bi bi-check-circle-fill me-2"></i>
@@ -191,11 +206,23 @@ const PostEditor = () => {
                 <div className="row g-3">
                   <div className="col-md-6">
                     <label className="form-label">Platform</label>
-                    <select className="form-select" {...register('platform')}>
-                      <option value="instagram">Instagram</option>
-                      <option value="facebook">Facebook</option>
-                      <option value="twitter">X (Twitter)</option>
-                      <option value="linkedin">LinkedIn</option>
+                    <select
+                      className="form-select"
+                      {...register('platform')}
+                      disabled={accounts.length === 0}
+                    >
+                      {accounts.length === 0 ? (
+                        <option value="">No accounts connected</option>
+                      ) : (
+                        accounts.map((acc) => {
+                          const p = PLATFORMS.find((x) => x.id === acc.platform);
+                          return (
+                            <option key={acc.platform} value={acc.platform}>
+                              {p?.name || acc.platform}
+                            </option>
+                          );
+                        })
+                      )}
                     </select>
                   </div>
                   <div className="col-md-6">
@@ -231,7 +258,7 @@ const PostEditor = () => {
                 <button
                   type="submit"
                   className="btn btn-primary mt-3"
-                  disabled={loading || !topicValue}
+                  disabled={loading || !topicValue || accounts.length === 0}
                 >
                   {loading ? (
                     <>
