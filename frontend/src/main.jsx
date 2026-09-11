@@ -8,13 +8,16 @@ import App from './App.jsx';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { PostsProvider } from './context/PostsContext.jsx';
+import { AccountsProvider } from './context/AccountsContext.jsx';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
         <PostsProvider>
-          <App />
+          <AccountsProvider>
+            <App />
+          </AccountsProvider>
         </PostsProvider>
       </AuthProvider>
     </BrowserRouter>
