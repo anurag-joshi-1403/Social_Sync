@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { usePosts } from '../../context/PostsContext.jsx';
 import StatsCard from './StatsCard.jsx';
+import MiniEngagementChart from './MiniEngagementChart.jsx';
+import UpcomingPosts from './UpcomingPosts.jsx';
 
 const Dashboard = () => {
   const { user } = useAuth();
