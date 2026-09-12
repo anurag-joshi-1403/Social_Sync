@@ -1,15 +1,16 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Login from './components/auth/Login';
-import Register from './components/auth/Register';
-import Layout from './components/common/Layout';
-import PrivateRoute from './components/common/PrivateRoute';
-import Dashboard from './components/dashboard/Dashboard';
-import PostEditor from './components/editor/PostEditor';
-import Schedule from './components/schedule/Schedule';
-import Analytics from './components/analytics/Analytics';
-import Accounts from './components/accounts/Accounts';
-import { useAuth } from './context/AuthContext';
+import Login from './components/auth/Login.jsx';
+import Register from './components/auth/Register.jsx';
+import Layout from './components/common/Layout.jsx';
+import PrivateRoute from './components/common/PrivateRoute.jsx';
+import NotFound from './components/common/NotFound.jsx';
+import Dashboard from './components/dashboard/Dashboard.jsx';
+import PostEditor from './components/editor/PostEditor.jsx';
+import Schedule from './components/schedule/Schedule.jsx';
+import Analytics from './components/analytics/Analytics.jsx';
+import Accounts from './components/accounts/Accounts.jsx';
+import { useAuth } from './context/AuthContext.jsx';
 
 function App() {
   const { user, loading } = useAuth();
@@ -18,11 +19,11 @@ function App() {
 
   return (
     <Routes>
-      {/* Public routes */}
+      {/* Public */}
       <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
       <Route path="/register" element={user ? <Navigate to="/dashboard" /> : <Register />} />
 
-      {/* Protected routes wrapped in Layout */}
+      {/* Protected */}
       <Route
         element={
           <PrivateRoute>
@@ -39,7 +40,7 @@ function App() {
 
       {/* Fallbacks */}
       <Route path="/" element={<Navigate to="/dashboard" />} />
-      <Route path="*" element={<Navigate to="/dashboard" />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
