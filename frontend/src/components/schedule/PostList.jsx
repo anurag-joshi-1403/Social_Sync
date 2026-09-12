@@ -1,12 +1,7 @@
 import React from 'react';
 import { usePosts } from '../../context/PostsContext.jsx';
-
-const platformBadge = {
-  instagram: { icon: 'bi-instagram', color: 'danger' },
-  facebook: { icon: 'bi-facebook', color: 'primary' },
-  twitter: { icon: 'bi-twitter-x', color: 'dark' },
-  linkedin: { icon: 'bi-linkedin', color: 'info' },
-};
+import { useToast } from '../../context/ToastContext.jsx';
+import { PLATFORMS } from '../../context/AccountsContext.jsx';
 
 const statusBadge = {
   published: 'success',
@@ -15,11 +10,20 @@ const statusBadge = {
   failed: 'danger',
 };
 
-const PostList = ({ filter = 'all' }) => {
+const PostList = ({ filter = 'all', onRowClick }) => {
   const { posts, deletePost } = usePosts();
+  const toast = useToast();
 
   const filtered =
     filter === 'all' ? posts : posts.filter((p) => p.status === filter);
+
+  const handleDelete = (e, id) => {
+    e.stopPropagation();
+    if (window.confirm('Delete this post permanently?')) {
+      deletePost(id);
+      toast.success('Post deleted.');
+    }
+  };
 
   if (filtered.length === 0) {
     return (
@@ -44,13 +48,17 @@ const PostList = ({ filter = 'all' }) => {
         </thead>
         <tbody>
           {filtered.map((post) => {
-            const pf = platformBadge[post.platform] || platformBadge.instagram;
+            const platform = PLATFORMS.find((p) => p.id === post.platform) || PLATFORMS[0];
             const sb = statusBadge[post.status] || 'secondary';
             const when = post.scheduledTime
               ? new Date(post.scheduledTime).toLocaleString()
               : '—';
             return (
-              <tr key={post.id}>
+              <tr
+                key={post.id}
+                style={{ cursor: onRowClick ? 'pointer' : 'default' }}
+                onClick={() => onRowClick && onRowClick(post)}
+              >
                 <td className="text-truncate" style={{ maxWidth: '320px' }}>
                   <div className="d-flex align-items-center">
                     {post.image && (
@@ -66,8 +74,11 @@ const PostList = ({ filter = 'all' }) => {
                 </td>
                 <td>
                   <span className="text-muted small">
-                    <i className={`bi ${pf.icon} me-1 text-${pf.color}`}></i>
-                    {post.platform}
+                    <i
+                      className={`bi ${platform.icon} me-1`}
+                      style={{ color: platform.color }}
+                    ></i>
+                    {platform.name}
                   </span>
                 </td>
                 <td>
@@ -79,7 +90,7 @@ const PostList = ({ filter = 'all' }) => {
                 <td className="text-end">
                   <button
                     className="btn btn-sm btn-outline-danger"
-                    onClick={() => deletePost(post.id)}
+                    onClick={(e) => handleDelete(e, post.id)}
                     title="Delete post"
                   >
                     <i className="bi bi-trash"></i>
