@@ -9,16 +9,19 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { PostsProvider } from './context/PostsContext.jsx';
 import { AccountsProvider } from './context/AccountsContext.jsx';
+import { ToastProvider } from './context/ToastContext.jsx';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <PostsProvider>
-          <AccountsProvider>
-            <App />
-          </AccountsProvider>
-        </PostsProvider>
+        <ToastProvider>
+          <PostsProvider>
+            <AccountsProvider>
+              <App />
+            </AccountsProvider>
+          </PostsProvider>
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
