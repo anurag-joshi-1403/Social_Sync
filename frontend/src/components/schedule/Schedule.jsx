@@ -2,11 +2,13 @@ import React, { useState, useMemo } from 'react';
 import Calendar from 'react-calendar';
 import { usePosts } from '../../context/PostsContext.jsx';
 import PostList from './PostList.jsx';
+import PostDetailModal from './PostDetailModal.jsx';
 
 const Schedule = () => {
   const { posts } = usePosts();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [filter, setFilter] = useState('all');
+  const [selectedPost, setSelectedPost] = useState(null);
 
   // Map posts by YYYY-MM-DD
   const postsByDate = useMemo(() => {
@@ -53,25 +55,22 @@ const Schedule = () => {
         </div>
         <div className="btn-group mt-3 mt-md-0">
           <button
-            className={`btn btn-sm ${
-              filter === 'all' ? 'btn-primary' : 'btn-outline-primary'
-            }`}
+            className={`btn btn-sm ${filter === 'all' ? 'btn-primary' : 'btn-outline-primary'
+              }`}
             onClick={() => setFilter('all')}
           >
             All ({posts.length})
           </button>
           <button
-            className={`btn btn-sm ${
-              filter === 'scheduled' ? 'btn-primary' : 'btn-outline-primary'
-            }`}
+            className={`btn btn-sm ${filter === 'scheduled' ? 'btn-primary' : 'btn-outline-primary'
+              }`}
             onClick={() => setFilter('scheduled')}
           >
             Scheduled
           </button>
           <button
-            className={`btn btn-sm ${
-              filter === 'draft' ? 'btn-primary' : 'btn-outline-primary'
-            }`}
+            className={`btn btn-sm ${filter === 'draft' ? 'btn-primary' : 'btn-outline-primary'
+              }`}
             onClick={() => setFilter('draft')}
           >
             Drafts
@@ -136,10 +135,9 @@ const Schedule = () => {
                           </div>
                           <p className="small mb-0 text-muted">{p.content}</p>
                         </div>
-                        <span className={`badge bg-${
-                          p.status === 'published' ? 'success' :
+                        <span className={`badge bg-${p.status === 'published' ? 'success' :
                           p.status === 'scheduled' ? 'primary' : 'secondary'
-                        } text-capitalize`}>
+                          } text-capitalize`}>
                           {p.status}
                         </span>
                       </div>
@@ -158,7 +156,13 @@ const Schedule = () => {
           <h5 className="mb-0 fw-semibold">All Posts</h5>
         </div>
         <div className="card-body p-0">
-          <PostList filter={filter} />
+          <PostList filter={filter} onRowClick={setSelectedPost} />
+          {selectedPost && (
+            <PostDetailModal
+              post={selectedPost}
+              onClose={() => setSelectedPost(null)}
+            />
+          )}
         </div>
       </div>
     </div>
