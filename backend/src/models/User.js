@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Password is required'],
       minlength: [6, 'Password must be at least 6 characters'],
-      select: false, // never return password unless explicitly asked
+      select: false,
     },
     avatar: {
       type: String,
@@ -40,11 +40,8 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// ---------- Pre-save hook: hash password before saving ----------
 userSchema.pre('save', async function (next) {
-  // Only hash if password was modified (or is new)
   if (!this.isModified('password')) return next();
-
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
@@ -54,12 +51,10 @@ userSchema.pre('save', async function (next) {
   }
 });
 
-// ---------- Instance method: compare password ----------
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return bcrypt.compare(enteredPassword, this.password);
 };
 
-// ---------- Instance method: safe user object (no password) ----------
 userSchema.methods.toSafeObject = function () {
   return {
     id: this._id,
