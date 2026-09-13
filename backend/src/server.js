@@ -4,7 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
-
+const { startScheduler } = require('./jobs/scheduler');
 
 // Connect to MongoDB
 connectDB();
@@ -40,11 +40,27 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ---------- Routes (added in later steps) ----------
+// ---------- Debug: env check ----------
+// TEMPORARY — remove before deploying
+app.get('/api/debug/env', (req, res) => {
+  res.json({
+    geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
+    geminiKeyPrefix: process.env.GEMINI_API_KEY
+      ? process.env.GEMINI_API_KEY.slice(0, 8) + '...'
+      : null,
+    geminiKeyLength: process.env.GEMINI_API_KEY
+      ? process.env.GEMINI_API_KEY.length
+      : 0,
+    geminiBaseUrl: process.env.GEMINI_BASE_URL || null,
+    geminiModel: process.env.GEMINI_MODEL || null,
+  });
+});
+
+// ---------- Routes ----------
 app.use('/api/auth', require('./routes/auth'));
-// app.use('/api/posts', require('./routes/posts'));
-// app.use('/api/accounts', require('./routes/accounts'));
-// app.use('/api/content', require('./routes/content'));
+app.use('/api/posts', require('./routes/posts'));
+app.use('/api/accounts', require('./routes/accounts'));
+app.use('/api/content', require('./routes/content'));
 
 // ---------- 404 Handler ----------
 app.use((req, res) => {
@@ -65,4 +81,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+
+  // Start scheduler
+  startScheduler();
 });
