@@ -1,0 +1,49 @@
+const { generateContent } = require('../services/openaiService');
+
+const VALID_PLATFORMS = ['instagram', 'facebook', 'twitter', 'linkedin'];
+const VALID_TONES = ['casual', 'professional', 'promotional', 'inspirational', 'humorous'];
+
+// ---------- @route   POST /api/content/generate ----------
+// ---------- @access  Private ----------
+const generate = async (req, res) => {
+  try {
+    const { topic, platform, tone } = req.body;
+
+    if (!topic || !topic.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Topic is required',
+      });
+    }
+
+    if (topic.trim().length < 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Topic must be at least 5 characters',
+      });
+    }
+
+    const safePlatform = VALID_PLATFORMS.includes(platform)
+      ? platform
+      : 'instagram';
+
+    const safeTone = VALID_TONES.includes(tone) ? tone : 'casual';
+
+    const options = await generateContent({
+      topic: topic.trim(),
+      platform: safePlatform,
+      tone: safeTone,
+    });
+
+    res.status(200).json({
+      success: true,
+      count: options.length,
+      options,
+    });
+  } catch (error) {
+    console.error('generate content error:', error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = { generate };
