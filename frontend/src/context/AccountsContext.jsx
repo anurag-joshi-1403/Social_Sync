@@ -1,10 +1,18 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
+import { useAuth } from './AuthContext.jsx';
+import { accountsService } from '../services/accountsService.js';
 
 const AccountsContext = createContext();
 
 export const useAccounts = () => useContext(AccountsContext);
 
-// The four platforms our app supports
+// ---------- Platform metadata (colors, icons, names) ----------
 export const PLATFORMS = [
   {
     id: 'instagram',
@@ -40,7 +48,7 @@ export const PLATFORMS = [
   },
 ];
 
-// Fake usernames for the mock OAuth flow
+// Fallback usernames for mock OAuth flow
 const mockUsernames = {
   instagram: 'demo.creator',
   facebook: 'Demo Brand Page',
@@ -49,58 +57,91 @@ const mockUsernames = {
 };
 
 export const AccountsProvider = ({ children }) => {
+  const { user, loading: authLoading } = useAuth();
   const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('socialAccounts');
-    if (saved) {
-      try {
-        setAccounts(JSON.parse(saved));
-      } catch (e) {
-        console.error('Failed to parse accounts', e);
-      }
+  // ---------- Fetch accounts from backend ----------
+  const fetchAccounts = useCallback(async () => {
+    if (!localStorage.getItem('token')) {
+      setAccounts([]);
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const data = await accountsService.list();
+      setAccounts(data.accounts || []);
+    } catch (err) {
+      setError(err.message || 'Failed to load accounts');
+      console.error('fetchAccounts error:', err);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  // Persist on every change
+  // ---------- Load accounts when user changes ----------
   useEffect(() => {
-    localStorage.setItem('socialAccounts', JSON.stringify(accounts));
-  }, [accounts]);
+    if (authLoading) return;
 
+    if (user) {
+      fetchAccounts();
+    } else {
+      setAccounts([]);
+    }
+  }, [user, authLoading, fetchAccounts]);
+
+  // ---------- Helpers ----------
   const isConnected = (platformId) =>
     accounts.some((a) => a.platform === platformId);
 
   const getAccount = (platformId) =>
     accounts.find((a) => a.platform === platformId);
 
-  // Simulate an OAuth authorization (called after user clicks "Authorize" in modal)
-  const connectAccount = (platformId) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newAccount = {
-          id: `acc-${Date.now()}`,
-          platform: platformId,
-          username: mockUsernames[platformId] || 'demo_user',
-          accessToken: `mock-token-${platformId}-${Date.now()}`,
-          connectedAt: new Date().toISOString(),
-        };
-        setAccounts((prev) => [...prev.filter((a) => a.platform !== platformId), newAccount]);
-        resolve(newAccount);
-      }, 1500);
-    });
+  // ---------- Connect (mock OAuth) ----------
+  // Real OAuth would exchange a code with the backend. For now, we send
+  // a fake accessToken + username so the backend can save it.
+  const connectAccount = async (platformId) => {
+    setError('');
+    try {
+      const data = await accountsService.connect({
+        platform: platformId,
+        username: mockUsernames[platformId] || 'demo_user',
+        accessToken: `mock-token-${platformId}-${Date.now()}`,
+      });
+      setAccounts((prev) => [
+        ...prev.filter((a) => a.platform !== platformId),
+        data.account,
+      ]);
+      return data.account;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
   };
 
-  const disconnectAccount = (platformId) => {
-    setAccounts((prev) => prev.filter((a) => a.platform !== platformId));
+  // ---------- Disconnect ----------
+  const disconnectAccount = async (platformId) => {
+    setError('');
+    try {
+      await accountsService.disconnect(platformId);
+      setAccounts((prev) => prev.filter((a) => a.platform !== platformId));
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
   };
 
   const value = {
     accounts,
+    loading,
+    error,
     isConnected,
     getAccount,
     connectAccount,
     disconnectAccount,
+    refresh: fetchAccounts,
   };
 
   return (
