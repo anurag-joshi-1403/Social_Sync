@@ -5,7 +5,7 @@ import PostList from './PostList.jsx';
 import PostDetailModal from './PostDetailModal.jsx';
 
 const Schedule = () => {
-  const { posts } = usePosts();
+  const { posts, loading } = usePosts();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [filter, setFilter] = useState('all');
   const [selectedPost, setSelectedPost] = useState(null);
