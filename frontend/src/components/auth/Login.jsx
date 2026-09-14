@@ -6,39 +6,39 @@ import { useNavigate, Link } from 'react-router-dom';
 // Floating emojis — mix of stationary (bob) + drifting + rockets flying across
 const FLOATING_EMOJIS = [
   // Rockets flying across (left → right, right → left)
-  { emoji: '🚀', top: '12%', left: '0%', delay: '0s',  size: '2.6rem', anim: 'anim-rocket-right', duration: '14s' },
-  { emoji: '🚀', top: '68%', left: '0%', delay: '5s',  size: '2.2rem', anim: 'anim-rocket-right', duration: '17s' },
-  { emoji: '🚀', top: '35%', left: '0%', delay: '2s',  size: '2.3rem', anim: 'anim-rocket-left',  duration: '16s' },
-  { emoji: '🚀', top: '80%', left: '0%', delay: '9s',  size: '1.9rem', anim: 'anim-rocket-left',  duration: '19s' },
+  { emoji: '🚀', top: '12%', left: '0%', delay: '0s', size: '2.6rem', anim: 'anim-rocket-right', duration: '14s' },
+  { emoji: '🚀', top: '68%', left: '0%', delay: '5s', size: '2.2rem', anim: 'anim-rocket-right', duration: '17s' },
+  { emoji: '🚀', top: '35%', left: '0%', delay: '2s', size: '2.3rem', anim: 'anim-rocket-left', duration: '16s' },
+  { emoji: '🚀', top: '80%', left: '0%', delay: '9s', size: '1.9rem', anim: 'anim-rocket-left', duration: '19s' },
 
   // Drifting across full screen
-  { emoji: '🎉', top: '20%', left: '0%', delay: '1s',  size: '2rem',   anim: 'anim-drift',         duration: '22s' },
-  { emoji: '🌟', top: '55%', left: '0%', delay: '6s',  size: '1.7rem', anim: 'anim-drift',         duration: '24s' },
-  { emoji: '🔥', top: '45%', left: '0%', delay: '3s',  size: '1.8rem', anim: 'anim-drift-reverse', duration: '23s' },
+  { emoji: '🎉', top: '20%', left: '0%', delay: '1s', size: '2rem', anim: 'anim-drift', duration: '22s' },
+  { emoji: '🌟', top: '55%', left: '0%', delay: '6s', size: '1.7rem', anim: 'anim-drift', duration: '24s' },
+  { emoji: '🔥', top: '45%', left: '0%', delay: '3s', size: '1.8rem', anim: 'anim-drift-reverse', duration: '23s' },
   { emoji: '💫', top: '85%', left: '0%', delay: '11s', size: '1.9rem', anim: 'anim-drift-reverse', duration: '25s' },
 
   // Bobbing in place
-  { emoji: '✨', top: '6%',  left: '18%', delay: '0s',   size: '1.8rem', anim: 'anim-float' },
-  { emoji: '💬', top: '38%', left: '6%',  delay: '0.3s', size: '1.9rem', anim: 'anim-float' },
-  { emoji: '❤️', top: '68%', left: '12%', delay: '1.8s', size: '2rem',   anim: 'anim-float' },
+  { emoji: '✨', top: '6%', left: '18%', delay: '0s', size: '1.8rem', anim: 'anim-float' },
+  { emoji: '💬', top: '38%', left: '6%', delay: '0.3s', size: '1.9rem', anim: 'anim-float' },
+  { emoji: '❤️', top: '68%', left: '12%', delay: '1.8s', size: '2rem', anim: 'anim-float' },
   { emoji: '💡', top: '88%', left: '60%', delay: '1.4s', size: '1.8rem', anim: 'anim-float' },
 ];
 
 // Floating social icons
 const FLOATING_SOCIAL = [
   // Drifting across (full screen)
-  { icon: 'bi-instagram', top: '6%',  left: '0%', delay: '0s',   color: '#E1306C', size: '2.4rem', anim: 'anim-drift',         duration: '20s' },
-  { icon: 'bi-youtube',   top: '75%', left: '0%', delay: '7s',   color: '#FF0000', size: '2.3rem', anim: 'anim-drift',         duration: '26s' },
-  { icon: 'bi-pinterest', top: '30%', left: '0%', delay: '4s',   color: '#E60023', size: '2rem',   anim: 'anim-drift-reverse', duration: '22s' },
-  { icon: 'bi-whatsapp',  top: '88%', left: '0%', delay: '10s',  color: '#25D366', size: '2.2rem', anim: 'anim-drift-reverse', duration: '24s' },
+  { icon: 'bi-instagram', top: '6%', left: '0%', delay: '0s', color: '#E1306C', size: '2.4rem', anim: 'anim-drift', duration: '20s' },
+  { icon: 'bi-youtube', top: '75%', left: '0%', delay: '7s', color: '#FF0000', size: '2.3rem', anim: 'anim-drift', duration: '26s' },
+  { icon: 'bi-pinterest', top: '30%', left: '0%', delay: '4s', color: '#E60023', size: '2rem', anim: 'anim-drift-reverse', duration: '22s' },
+  { icon: 'bi-whatsapp', top: '88%', left: '0%', delay: '10s', color: '#25D366', size: '2.2rem', anim: 'anim-drift-reverse', duration: '24s' },
 
   // Bobbing in place
-  { icon: 'bi-facebook',  top: '22%', left: '88%', delay: '0.9s', color: '#1877F2', size: '2.4rem', anim: 'anim-float' },
-  { icon: 'bi-twitter-x', top: '32%', left: '10%', delay: '1.6s', color: '#ffffff', size: '2rem',   anim: 'anim-float' },
-  { icon: 'bi-linkedin',  top: '58%', left: '82%', delay: '0.6s', color: '#0A66C2', size: '2.3rem', anim: 'anim-float' },
-  { icon: 'bi-tiktok',    top: '20%', left: '24%', delay: '1.3s', color: '#ffffff', size: '2rem',   anim: 'anim-float' },
-  { icon: 'bi-threads',   top: '82%', left: '50%', delay: '1.9s', color: '#ffffff', size: '2rem',   anim: 'anim-float' },
-  { icon: 'bi-snapchat',  top: '12%', left: '58%', delay: '1.1s', color: '#FFFC00', size: '2rem',   anim: 'anim-float' },
+  { icon: 'bi-facebook', top: '22%', left: '88%', delay: '0.9s', color: '#1877F2', size: '2.4rem', anim: 'anim-float' },
+  { icon: 'bi-twitter-x', top: '32%', left: '10%', delay: '1.6s', color: '#ffffff', size: '2rem', anim: 'anim-float' },
+  { icon: 'bi-linkedin', top: '58%', left: '82%', delay: '0.6s', color: '#0A66C2', size: '2.3rem', anim: 'anim-float' },
+  { icon: 'bi-tiktok', top: '20%', left: '24%', delay: '1.3s', color: '#ffffff', size: '2rem', anim: 'anim-float' },
+  { icon: 'bi-threads', top: '82%', left: '50%', delay: '1.9s', color: '#ffffff', size: '2rem', anim: 'anim-float' },
+  { icon: 'bi-snapchat', top: '12%', left: '58%', delay: '1.1s', color: '#FFFC00', size: '2rem', anim: 'anim-float' },
 ];
 
 const Login = () => {
@@ -47,7 +47,7 @@ const Login = () => {
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-
+  
   const onSubmit = async (data) => {
     setSubmitting(true);
     setError('');
@@ -55,7 +55,8 @@ const Login = () => {
       await login(data.email, data.password);
       navigate('/dashboard');
     } catch (err) {
-      setError('Invalid credentials');
+      // err.message comes from authService (already human-readable)
+      setError(err.message || 'Invalid email or password');
     } finally {
       setSubmitting(false);
     }
