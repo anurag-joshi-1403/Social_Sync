@@ -8,7 +8,7 @@ import UpcomingPosts from './UpcomingPosts.jsx';
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { posts } = usePosts();
+  const { posts, loading } = usePosts();
 
   const stats = useMemo(() => {
     return {
@@ -51,6 +51,12 @@ const Dashboard = () => {
           Create New Post
         </Link>
       </div>
+      {loading && posts.length === 0 && (
+        <div className="alert alert-info small">
+          <span className="spinner-border spinner-border-sm me-2" />
+          Loading your posts...
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="row g-3 mb-4">
