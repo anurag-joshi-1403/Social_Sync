@@ -19,16 +19,25 @@ const Accounts = () => {
   };
 
   const handleAuthorize = async (platformId) => {
-    await connectAccount(platformId);
     const platform = PLATFORMS.find((p) => p.id === platformId);
-    showToast(`Successfully connected ${platform.name}!`);
+    try {
+      await connectAccount(platformId);
+      showToast(`Successfully connected ${platform.name}!`);
+    } catch (err) {
+      showToast(err.message || 'Connection failed');
+    }
   };
 
-  const handleDisconnect = (platformId) => {
+  const handleDisconnect = async (platformId) => {
     const platform = PLATFORMS.find((p) => p.id === platformId);
-    if (window.confirm(`Disconnect ${platform.name}? Scheduled posts for this platform will not publish.`)) {
-      disconnectAccount(platformId);
+    if (!window.confirm(`Disconnect ${platform.name}? Scheduled posts for this platform will not publish.`)) {
+      return;
+    }
+    try {
+      await disconnectAccount(platformId);
       showToast(`Disconnected ${platform.name}.`);
+    } catch (err) {
+      showToast(err.message || 'Disconnect failed');
     }
   };
 
