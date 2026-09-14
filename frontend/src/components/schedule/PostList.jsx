@@ -17,11 +17,14 @@ const PostList = ({ filter = 'all', onRowClick }) => {
   const filtered =
     filter === 'all' ? posts : posts.filter((p) => p.status === filter);
 
-  const handleDelete = (e, id) => {
+  const handleDelete = async (e, id) => {
     e.stopPropagation();
-    if (window.confirm('Delete this post permanently?')) {
-      deletePost(id);
+    if (!window.confirm('Delete this post permanently?')) return;
+    try {
+      await deletePost(id);
       toast.success('Post deleted.');
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete post');
     }
   };
 
