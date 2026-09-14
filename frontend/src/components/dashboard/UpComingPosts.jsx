@@ -4,7 +4,7 @@ import { usePosts } from '../../context/PostsContext.jsx';
 import { PLATFORMS } from '../../context/AccountsContext.jsx';
 
 const UpcomingPosts = () => {
-  const { posts } = usePosts();
+  const { posts, loading } = usePosts();
 
   const upcoming = posts
     .filter((p) => p.status === 'scheduled' && p.scheduledTime)
@@ -24,12 +24,17 @@ const UpcomingPosts = () => {
         </Link>
       </div>
 
-      {upcoming.length === 0 ? (
+      {loading && posts.length === 0 ? (
+        <div className="card-body text-center py-4">
+          <div className="spinner-border spinner-border-sm text-primary"></div>
+        </div>
+      ) : upcoming.length === 0 ? (
         <div className="card-body text-center py-4 text-muted">
           <i className="bi bi-calendar-x fs-1 d-block mb-2"></i>
           <p className="small mb-0">No upcoming posts scheduled.</p>
         </div>
       ) : (
+
         <ul className="list-group list-group-flush">
           {upcoming.map((post) => {
             const platform = PLATFORMS.find((p) => p.id === post.platform) || PLATFORMS[0];
