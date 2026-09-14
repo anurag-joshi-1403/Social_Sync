@@ -1,26 +1,26 @@
-// src/services/mockApi.js
-// Mock API service. Replace with real backend calls in Step 7.
+// src/services/mockApi.jsx
+// Mock AI content generation — will be replaced with real backend calls.
 
 const captionTemplates = {
   casual: [
-    `Hey friends! Just wanted to share — ${'{topic}'}. Come check it out! ✨`,
-    `Guess what? ${'{topic}'}. We're so excited to share this with you! 🎉`,
-    `Okay, real talk: ${'{topic}'}. You don't want to miss this. 💫`,
+    `Hey! Just wanted to share — ${'{topic}'}. Come check it out! ✨`,
+    `${'{topic}'}. So excited to share this with you all! 🎉`,
+    `Real talk: ${'{topic}'}. You don't want to miss this. 💫`,
   ],
   professional: [
     `We're pleased to announce: ${'{topic}'}. Learn more at the link below.`,
-    `Exciting news — ${'{topic}'}. We look forward to sharing more details.`,
-    `${'{topic}'}. We're committed to delivering excellence in everything we do.`,
+    `Exciting update — ${'{topic}'}. We look forward to sharing more.`,
+    `${'{topic}'}. Our team is committed to delivering excellence.`,
   ],
   promotional: [
-    `🔥 Limited time only! ${'{topic}'}. Don't wait — grab yours today!`,
-    `${'{topic}'}. Special offer just dropped. Shop now before it's gone!`,
-    `Big news! ${'{topic}'}. Tap to shop and save big this week only.`,
+    `🔥 Limited time! ${'{topic}'}. Don't wait — grab yours today!`,
+    `${'{topic}'}. Special offer just dropped — shop now!`,
+    `Big news: ${'{topic}'}. Tap to shop and save this week only.`,
   ],
   inspirational: [
-    `Believe in yourself. ${'{topic}'}. Small steps lead to big changes. ✨`,
+    `Believe in yourself. ${'{topic}'}. Small steps lead to big change. ✨`,
     `Progress, not perfection. ${'{topic}'}. Keep going — you've got this.`,
-    `Dream big. ${'{topic}'}. Every journey begins with a single step.`,
+    `Dream big. ${'{topic}'}. Every journey starts with a single step.`,
   ],
   humorous: [
     `Warning: ${'{topic}'} may cause extreme happiness. Proceed with caution 😄`,
@@ -48,7 +48,6 @@ const buildTopicHashtags = (topic) => {
 
 export const generateContent = ({ topic, platform, tone }) => {
   return new Promise((resolve) => {
-    // Simulate network + AI latency
     setTimeout(() => {
       const templates = captionTemplates[tone] || captionTemplates.casual;
       const platformTags = platformHashtags[platform] || platformHashtags.instagram;
