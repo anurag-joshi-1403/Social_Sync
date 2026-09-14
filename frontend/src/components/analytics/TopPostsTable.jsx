@@ -40,7 +40,7 @@ const TopPostsTable = ({ posts }) => {
           </thead>
           <tbody>
             {posts.map((post, i) => {
-              const platform = PLATFORMS.find((p) => p.id === post.platform) || PLATFORMS[0];
+              const key = post.id || post._id || i;
               return (
                 <tr key={post.id}>
                   <td>
