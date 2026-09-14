@@ -2,17 +2,25 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { usePosts } from '../../context/PostsContext.jsx';
+import { contentService } from '../../services/contentService.js';
 import ContentOptionCard from './ContentOptionCard.jsx';
 import { useAccounts, PLATFORMS } from '../../context/AccountsContext.jsx';
 
 const PostEditor = () => {
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm({
     defaultValues: {
       topic: '',
       platform: 'instagram',
       tone: 'casual',
     },
   });
+
   const navigate = useNavigate();
   const { accounts } = useAccounts();
   const { addPost } = usePosts();
@@ -37,7 +45,7 @@ const PostEditor = () => {
     setFinalCaption('');
     setFinalHashtags('');
     try {
-      const result = await generateContent({
+      const result = await contentService.generate({
         topic: data.topic,
         platform: data.platform,
         tone: data.tone,
@@ -45,6 +53,7 @@ const PostEditor = () => {
       setOptions(result.options);
     } catch (err) {
       console.error(err);
+      showError(err.message || 'Failed to generate content. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -66,26 +75,30 @@ const PostEditor = () => {
   };
 
   // ---------- Save Draft ----------
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     if (!finalCaption.trim()) {
       showError('Please add caption content before saving.');
       return;
     }
-    addPost({
-      content: finalCaption,
-      hashtags: finalHashtags,
-      platform: watch('platform'),
-      tone: watch('tone'),
-      image: imagePreview,
-      status: 'draft',
-      scheduledTime: null,
-    });
-    showSuccess('Draft saved successfully!');
-    resetForm();
+    try {
+      await addPost({
+        content: finalCaption,
+        hashtags: finalHashtags,
+        platform: watch('platform'),
+        tone: watch('tone'),
+        image: imagePreview,
+        status: 'draft',
+        scheduledTime: null,
+      });
+      showSuccess('Draft saved successfully!');
+      resetForm();
+    } catch (err) {
+      showError(err.message || 'Failed to save draft');
+    }
   };
 
   // ---------- Schedule Post ----------
-  const handleSchedulePost = () => {
+  const handleSchedulePost = async () => {
     if (!finalCaption.trim()) {
       showError('Please add caption content before scheduling.');
       return;
@@ -99,18 +112,22 @@ const PostEditor = () => {
       showError('Please choose a future date and time.');
       return;
     }
-    addPost({
-      content: finalCaption,
-      hashtags: finalHashtags,
-      platform: watch('platform'),
-      tone: watch('tone'),
-      image: imagePreview,
-      status: 'scheduled',
-      scheduledTime: scheduledDate.toISOString(),
-    });
-    showSuccess('Post scheduled successfully!');
-    resetForm();
-    setTimeout(() => navigate('/schedule'), 1200);
+    try {
+      await addPost({
+        content: finalCaption,
+        hashtags: finalHashtags,
+        platform: watch('platform'),
+        tone: watch('tone'),
+        image: imagePreview,
+        status: 'scheduled',
+        scheduledTime: scheduledDate.toISOString(),
+      });
+      showSuccess('Post scheduled successfully!');
+      resetForm();
+      setTimeout(() => navigate('/schedule'), 1200);
+    } catch (err) {
+      showError(err.message || 'Failed to schedule post');
+    }
   };
 
   const showSuccess = (msg) => {
@@ -141,7 +158,8 @@ const PostEditor = () => {
       <div className="mb-4">
         <h2 className="page-title mb-1">Create Post</h2>
         <p className="page-subtitle mb-0">
-          Describe your topic, pick a platform and tone, and let AI draft your content.
+          Describe your topic, pick a platform and tone, and let AI draft your
+          content.
         </p>
       </div>
 
@@ -173,9 +191,9 @@ const PostEditor = () => {
       )}
 
       <div className="row g-4">
-        {/* Left */}
+        {/* Left column */}
         <div className="col-lg-8">
-          {/* Input Form */}
+          {/* Step 1 — Input form */}
           <div className="card shadow-sm mb-4">
             <div className="card-body">
               <h5 className="fw-semibold mb-3">
@@ -276,7 +294,7 @@ const PostEditor = () => {
             </div>
           </div>
 
-          {/* AI Options */}
+          {/* Step 2 — AI options */}
           {options.length > 0 && (
             <div className="card shadow-sm mb-4">
               <div className="card-body">
@@ -299,7 +317,7 @@ const PostEditor = () => {
             </div>
           )}
 
-          {/* Final Editor */}
+          {/* Step 3 — Refine & save */}
           {selectedOption && (
             <div className="card shadow-sm">
               <div className="card-body">
@@ -338,7 +356,9 @@ const PostEditor = () => {
                     className="form-control"
                     value={scheduleTime}
                     onChange={(e) => setScheduleTime(e.target.value)}
-                    min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+                    min={new Date(Date.now() + 60000)
+                      .toISOString()
+                      .slice(0, 16)}
                   />
                   <small className="text-muted">
                     Choose a future date and time. Required for scheduling.
@@ -375,7 +395,7 @@ const PostEditor = () => {
           )}
         </div>
 
-        {/* Right: Preview */}
+        {/* Right column — Live Preview */}
         <div className="col-lg-4">
           <div className="card shadow-sm sticky-top" style={{ top: '1rem' }}>
             <div className="card-body">
@@ -394,7 +414,9 @@ const PostEditor = () => {
                     <div className="fw-semibold small">Your Brand</div>
                     <div className="text-muted small">
                       {scheduleTime
-                        ? `Scheduled: ${new Date(scheduleTime).toLocaleString()}`
+                        ? `Scheduled: ${new Date(
+                            scheduleTime
+                          ).toLocaleString()}`
                         : 'Just now'}
                     </div>
                   </div>
