@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { authService } from '../services/authService.js';
 
 const AuthContext = createContext();
 
@@ -8,41 +9,63 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ---------- Load user on mount (if token exists) ----------
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    if (token && userData) {
-      setUser(JSON.parse(userData));
-    }
-    setLoading(false);
+    const bootstrap = async () => {
+      const token = localStorage.getItem('token');
+      const cachedUser = localStorage.getItem('user');
+
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      // Show cached user immediately for a snappy UI
+      if (cachedUser) {
+        try {
+          setUser(JSON.parse(cachedUser));
+        } catch (e) {
+          localStorage.removeItem('user');
+        }
+      }
+
+      // Then verify token with backend
+      try {
+        const data = await authService.me();
+        setUser(data.user);
+        localStorage.setItem('user', JSON.stringify(data.user));
+      } catch (error) {
+        // Token invalid/expired → clear everything
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    bootstrap();
   }, []);
 
-  const login = (email, password) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const mockUser = { name: 'Demo User', email };
-        const mockToken = 'fake-jwt-token';
-        localStorage.setItem('token', mockToken);
-        localStorage.setItem('user', JSON.stringify(mockUser));
-        setUser(mockUser);
-        resolve();
-      }, 500);
-    });
+  // ---------- Register ----------
+  const register = async (name, email, password) => {
+    const data = await authService.register({ name, email, password });
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    setUser(data.user);
+    return data;
   };
 
-  const register = (name, email, password) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const mockUser = { name, email };
-        const mockToken = 'fake-jwt-token';
-        localStorage.setItem('token', mockToken);
-        localStorage.setItem('user', JSON.stringify(mockUser));
-        setUser(mockUser);
-        resolve();
-      }, 500);
-    });
+  // ---------- Login ----------
+  const login = async (email, password) => {
+    const data = await authService.login({ email, password });
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    setUser(data.user);
+    return data;
   };
 
+  // ---------- Logout ----------
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -51,10 +74,10 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
+    loading,
     login,
     register,
     logout,
-    loading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
