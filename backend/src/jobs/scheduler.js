@@ -6,13 +6,20 @@ let task = null;
 function startScheduler() {
   if (task) return task; // avoid double-start
 
-  task = cron.schedule('* * * * *', async () => {
-    try {
-      await publishDuePosts();
-    } catch (error) {
-      console.error('❌ Scheduler error:', error.message);
+  task = cron.schedule(
+    '* * * * *',
+    async () => {
+      try {
+        await publishDuePosts();
+      } catch (error) {
+        console.error('❌ Scheduler error:', error.message);
+      }
+    },
+    {
+      scheduled: true,
+      recoverMissedExecutions: false, // ← stops the "missed execution" warnings
     }
-  });
+  );
 
   console.log('⏰ Scheduler started — checking every minute for due posts');
   return task;
