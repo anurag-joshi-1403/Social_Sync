@@ -1,5 +1,5 @@
 import React from 'react';
-import { PLATFORMS } from '../../context/AccountsContext.jsx';
+import { PLATFORMS } from '../../constants/platforms.js';
 
 const TopPostsTable = ({ posts }) => {
   if (!posts || posts.length === 0) {
@@ -10,7 +10,9 @@ const TopPostsTable = ({ posts }) => {
         </div>
         <div className="card-body text-center py-5 text-muted">
           <i className="bi bi-bar-chart fs-1 d-block mb-2"></i>
-          <p className="mb-0">Create and publish posts to see performance here.</p>
+          <p className="mb-0">
+            Create and publish posts to see performance here.
+          </p>
         </div>
       </div>
     );
@@ -40,11 +42,20 @@ const TopPostsTable = ({ posts }) => {
           </thead>
           <tbody>
             {posts.map((post, i) => {
+              const platform =
+                PLATFORMS.find((p) => p.id === post.platform) || PLATFORMS[0];
               const key = post.id || post._id || i;
+
               return (
-                <tr key={post.id}>
+                <tr key={key}>
                   <td>
-                    <span className={`badge ${i === 0 ? 'bg-warning text-dark' : 'bg-light text-dark border'}`}>
+                    <span
+                      className={`badge ${
+                        i === 0
+                          ? 'bg-warning text-dark'
+                          : 'bg-light text-dark border'
+                      }`}
+                    >
                       {i + 1}
                     </span>
                   </td>
@@ -62,13 +73,18 @@ const TopPostsTable = ({ posts }) => {
                     </div>
                   </td>
                   <td>
-                    <i className={`bi ${platform.icon} me-1`} style={{ color: platform.color }}></i>
+                    <i
+                      className={`bi ${platform.icon} me-1`}
+                      style={{ color: platform.color }}
+                    ></i>
                     <span className="small text-muted">{platform.name}</span>
                   </td>
-                  <td className="text-end fw-semibold">{post.likes}</td>
-                  <td className="text-end fw-semibold">{post.comments}</td>
-                  <td className="text-end fw-semibold">{post.shares}</td>
-                  <td className="text-end text-muted">{post.reach}</td>
+                  <td className="text-end fw-semibold">{post.likes || 0}</td>
+                  <td className="text-end fw-semibold">
+                    {post.comments || 0}
+                  </td>
+                  <td className="text-end fw-semibold">{post.shares || 0}</td>
+                  <td className="text-end text-muted">{post.reach || 0}</td>
                 </tr>
               );
             })}
