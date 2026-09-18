@@ -18,4 +18,11 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  {
+    // Each context file deliberately exports its provider component alongside
+    // its `useX` consumer hook. Splitting them apart would only buy slightly
+    // better hot-reload behaviour, so the rule is off for this directory.
+    files: ['src/context/*.jsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
 ])
