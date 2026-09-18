@@ -10,9 +10,23 @@ const app = express();
 
 // ---------- Middleware ----------
 app.use(helmet());
+
+// CLIENT_URL is a comma-separated list of allowed origins. A `*` matches any
+// run of characters, so `https://my-app-*.vercel.app` covers Vercel preview
+// deployments, which each get a unique hostname.
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim().replace(/\/+$/, ''))
+  .filter(Boolean)
+  .map((pattern) => {
+    if (!pattern.includes('*')) return pattern;
+    const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`^${escaped.replace(/\*/g, '.*')}$`);
+  });
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: allowedOrigins,
     credentials: true,
   })
 );
