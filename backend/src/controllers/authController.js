@@ -3,7 +3,7 @@ const generateToken = require('../utils/generateToken');
 
 // ---------- @route   POST /api/auth/register ----------
 // ---------- @access  Public ----------
-const register = async (req, res) => {
+const register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
@@ -36,14 +36,13 @@ const register = async (req, res) => {
       user: user.toSafeObject(),
     });
   } catch (error) {
-    console.error('Register error:', error.message);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
 // ---------- @route   POST /api/auth/login ----------
 // ---------- @access  Public ----------
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -80,21 +79,20 @@ const login = async (req, res) => {
       user: user.toSafeObject(),
     });
   } catch (error) {
-    console.error('Login error:', error.message);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
 // ---------- @route   GET /api/auth/me ----------
 // ---------- @access  Private ----------
-const getMe = async (req, res) => {
+const getMe = async (req, res, next) => {
   try {
     res.status(200).json({
       success: true,
       user: req.user.toSafeObject(),
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 

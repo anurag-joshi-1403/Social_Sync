@@ -4,7 +4,7 @@ const VALID_PLATFORMS = ['instagram', 'facebook', 'twitter', 'linkedin'];
 
 // ---------- @route   GET /api/accounts ----------
 // ---------- @access  Private ----------
-const getAccounts = async (req, res) => {
+const getAccounts = async (req, res, next) => {
   try {
     const accounts = await SocialAccount.find({ user: req.user._id });
     res.status(200).json({
@@ -13,8 +13,7 @@ const getAccounts = async (req, res) => {
       accounts: accounts.map((a) => a.toSafeObject()),
     });
   } catch (error) {
-    console.error('getAccounts error:', error.message);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
@@ -23,7 +22,7 @@ const getAccounts = async (req, res) => {
 // Body: { platform, username, accessToken }
 // In real OAuth, this endpoint would receive a code from the frontend
 // and exchange it for a real token. Here we accept a mock token.
-const connectAccount = async (req, res) => {
+const connectAccount = async (req, res, next) => {
   try {
     const { platform, username, accessToken, accountId } = req.body;
 
@@ -72,14 +71,13 @@ const connectAccount = async (req, res) => {
       account: account.toSafeObject(),
     });
   } catch (error) {
-    console.error('connectAccount error:', error.message);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
 // ---------- @route   DELETE /api/accounts/:platform ----------
 // ---------- @access  Private ----------
-const disconnectAccount = async (req, res) => {
+const disconnectAccount = async (req, res, next) => {
   try {
     const { platform } = req.params;
 
@@ -107,8 +105,7 @@ const disconnectAccount = async (req, res) => {
       message: `${platform} disconnected successfully`,
     });
   } catch (error) {
-    console.error('disconnectAccount error:', error.message);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 

@@ -2,7 +2,7 @@ const Post = require('../models/Post');
 
 // ---------- @route   POST /api/posts ----------
 // ---------- @access  Private ----------
-const createPost = async (req, res) => {
+const createPost = async (req, res, next) => {
   try {
     const {
       content,
@@ -25,6 +25,16 @@ const createPost = async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: 'Platform is required' });
+    }
+
+    // A new post can only start as a draft or a scheduled post; 'published'
+    // and 'failed' are set by the publisher, never by the client.
+    const requestedStatus = status || 'draft';
+    if (!['draft', 'scheduled'].includes(requestedStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "status must be either 'draft' or 'scheduled'",
+      });
     }
 
     let parsedSchedule = null;
@@ -56,7 +66,7 @@ const createPost = async (req, res) => {
       platform,
       tone: tone || 'casual',
       image: image || '',
-      status: status || 'draft',
+      status: requestedStatus,
       scheduledTime: parsedSchedule,
       aiGenerated: Boolean(aiGenerated),
     });
@@ -67,20 +77,23 @@ const createPost = async (req, res) => {
       post,
     });
   } catch (error) {
-    console.error('createPost error:', error.message);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
 // ---------- @route   GET /api/posts ----------
 // ---------- @access  Private ----------
-const getPosts = async (req, res) => {
+const getPosts = async (req, res, next) => {
   try {
     const filter = { user: req.user._id };
     if (req.query.status) filter.status = req.query.status;
     if (req.query.platform) filter.platform = req.query.platform;
 
-    const posts = await Post.find(filter).sort({ createdAt: -1 });
+    // `image` holds base64 payloads — excluded here so list views stay small.
+    // Clients read the full image from GET /api/posts/:id when they need it.
+    const posts = await Post.find(filter)
+      .select('-image')
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -88,14 +101,13 @@ const getPosts = async (req, res) => {
       posts,
     });
   } catch (error) {
-    console.error('getPosts error:', error.message);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
 // ---------- @route   GET /api/posts/stats ----------
 // ---------- @access  Private ----------
-const getStats = async (req, res) => {
+const getStats = async (req, res, next) => {
   try {
     const userId = req.user._id;
 
@@ -112,14 +124,13 @@ const getStats = async (req, res) => {
       stats: { total, scheduled, published, drafts, failed },
     });
   } catch (error) {
-    console.error('getStats error:', error.message);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
 // ---------- @route   GET /api/posts/:id ----------
 // ---------- @access  Private ----------
-const getPostById = async (req, res) => {
+const getPostById = async (req, res, next) => {
   try {
     const post = await Post.findOne({
       _id: req.params.id,
@@ -134,19 +145,18 @@ const getPostById = async (req, res) => {
 
     res.status(200).json({ success: true, post });
   } catch (error) {
-    console.error('getPostById error:', error.message);
     if (error.kind === 'ObjectId') {
       return res
         .status(404)
         .json({ success: false, message: 'Post not found' });
     }
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
 // ---------- @route   PUT /api/posts/:id ----------
 // ---------- @access  Private ----------
-const updatePost = async (req, res) => {
+const updatePost = async (req, res, next) => {
   try {
     const post = await Post.findOne({
       _id: req.params.id,
@@ -159,15 +169,15 @@ const updatePost = async (req, res) => {
         .json({ success: false, message: 'Post not found' });
     }
 
+    // `status` is handled separately below and `engagement` is owned by the
+    // publisher — neither may be set directly by a client.
     const allowed = [
       'content',
       'hashtags',
       'platform',
       'tone',
       'image',
-      'status',
       'scheduledTime',
-      'engagement',
     ];
 
     allowed.forEach((field) => {
@@ -175,6 +185,26 @@ const updatePost = async (req, res) => {
         post[field] = req.body[field];
       }
     });
+
+    // Only these transitions are a user's to make. Reaching 'published' or
+    // 'failed' is the publisher's job, so both are rejected here.
+    const ALLOWED_TRANSITIONS = {
+      draft: ['draft', 'scheduled'],
+      scheduled: ['scheduled', 'draft'],
+      failed: ['failed', 'scheduled'],
+      published: ['published'],
+    };
+
+    if (req.body.status !== undefined && req.body.status !== post.status) {
+      const permitted = ALLOWED_TRANSITIONS[post.status] || [];
+      if (!permitted.includes(req.body.status)) {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot change status from '${post.status}' to '${req.body.status}'`,
+        });
+      }
+      post.status = req.body.status;
+    }
 
     if (post.status === 'scheduled') {
       if (!post.scheduledTime) {
@@ -199,19 +229,18 @@ const updatePost = async (req, res) => {
       post,
     });
   } catch (error) {
-    console.error('updatePost error:', error.message);
     if (error.kind === 'ObjectId') {
       return res
         .status(404)
         .json({ success: false, message: 'Post not found' });
     }
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 
 // ---------- @route   DELETE /api/posts/:id ----------
 // ---------- @access  Private ----------
-const deletePost = async (req, res) => {
+const deletePost = async (req, res, next) => {
   try {
     const post = await Post.findOneAndDelete({
       _id: req.params.id,
@@ -229,13 +258,12 @@ const deletePost = async (req, res) => {
       message: 'Post deleted successfully',
     });
   } catch (error) {
-    console.error('deletePost error:', error.message);
     if (error.kind === 'ObjectId') {
       return res
         .status(404)
         .json({ success: false, message: 'Post not found' });
     }
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 

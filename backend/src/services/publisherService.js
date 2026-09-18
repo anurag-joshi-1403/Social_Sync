@@ -3,6 +3,10 @@ const SocialAccount = require('../models/SocialAccount');
 
 const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
+// A post claimed for publishing but never finished (process killed mid-run)
+// is released back to 'scheduled' after this long.
+const STALE_CLAIM_MS = 10 * 60 * 1000;
+
 const publishPost = async (post) => {
   try {
     const account = await SocialAccount.findOne({
@@ -46,30 +50,64 @@ const publishPost = async (post) => {
   }
 };
 
+// Returns 'scheduled' to any post left mid-claim by a crashed or restarted run.
+const releaseStaleClaims = async () => {
+  const cutoff = new Date(Date.now() - STALE_CLAIM_MS);
+  const { modifiedCount } = await Post.updateMany(
+    { status: 'publishing', updatedAt: { $lte: cutoff } },
+    { $set: { status: 'scheduled' } }
+  );
+
+  if (modifiedCount > 0) {
+    console.log(`⏰ Released ${modifiedCount} stale publishing claim(s)`);
+  }
+  return modifiedCount;
+};
+
 const publishDuePosts = async () => {
   const now = new Date();
 
-  const duePosts = await Post.find({
+  const dueIds = await Post.find({
     status: 'scheduled',
     scheduledTime: { $lte: now },
-  }).limit(50);
+  })
+    .select('_id')
+    .limit(50)
+    .lean();
 
-  if (duePosts.length === 0) return { published: 0, failed: 0 };
+  if (dueIds.length === 0) return { published: 0, failed: 0, skipped: 0 };
 
-  console.log(`\n⏰ Scheduler: ${duePosts.length} post(s) due`);
+  console.log(`\n⏰ Scheduler: ${dueIds.length} post(s) due`);
 
   let published = 0;
   let failed = 0;
+  let skipped = 0;
 
-  for (const post of duePosts) {
+  for (const { _id } of dueIds) {
+    // Atomic claim: whoever flips 'scheduled' → 'publishing' owns the post.
+    // A concurrent tick or a second instance gets null and moves on, so a
+    // post is never published twice.
+    const post = await Post.findOneAndUpdate(
+      { _id, status: 'scheduled' },
+      { $set: { status: 'publishing' } },
+      { new: true }
+    );
+
+    if (!post) {
+      skipped++;
+      continue;
+    }
+
     console.log(`   → Publishing post ${post._id} (${post.platform})`);
     const result = await publishPost(post);
     if (result.success) published++;
     else failed++;
   }
 
-  console.log(`⏰ Scheduler done: ${published} published, ${failed} failed\n`);
-  return { published, failed };
+  console.log(
+    `⏰ Scheduler done: ${published} published, ${failed} failed, ${skipped} claimed elsewhere\n`
+  );
+  return { published, failed, skipped };
 };
 
-module.exports = { publishPost, publishDuePosts };
+module.exports = { publishPost, publishDuePosts, releaseStaleClaims };

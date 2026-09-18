@@ -5,7 +5,7 @@ const VALID_TONES = ['casual', 'professional', 'promotional', 'inspirational', '
 
 // ---------- @route   POST /api/content/generate ----------
 // ---------- @access  Private ----------
-const generate = async (req, res) => {
+const generate = async (req, res, next) => {
   try {
     const { topic, platform, tone } = req.body;
 
@@ -41,8 +41,7 @@ const generate = async (req, res) => {
       options,
     });
   } catch (error) {
-    console.error('generate content error:', error.message);
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 };
 

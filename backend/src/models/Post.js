@@ -29,12 +29,22 @@ const postSchema = new mongoose.Schema(
       default: 'casual',
     },
     image: {
-      type: String, // base64 or URL
+      type: String, // base64 data URL or remote URL
       default: '',
+      // ~2MB of base64 ≈ 2.8M characters. Keeps a single document well clear
+      // of MongoDB's 16MB ceiling and matches the express.json body limit.
+      maxlength: [2_800_000, 'Image is too large (2MB maximum)'],
+    },
+    // Lets list endpoints project `image` out while the UI still knows whether
+    // to show a thumbnail placeholder.
+    hasImage: {
+      type: Boolean,
+      default: false,
     },
     status: {
       type: String,
-      enum: ['draft', 'scheduled', 'published', 'failed'],
+      // 'publishing' is a short-lived lock the scheduler claims a post with.
+      enum: ['draft', 'scheduled', 'publishing', 'published', 'failed'],
       default: 'draft',
       index: true,
     },
@@ -71,5 +81,13 @@ const postSchema = new mongoose.Schema(
 
 // Compound index for scheduler: find due posts fast
 postSchema.index({ status: 1, scheduledTime: 1 });
+
+// Keep `hasImage` in step with `image` however the document was modified.
+postSchema.pre('save', function (next) {
+  if (this.isModified('image')) {
+    this.hasImage = Boolean(this.image);
+  }
+  next();
+});
 
 module.exports = mongoose.model('Post', postSchema);
