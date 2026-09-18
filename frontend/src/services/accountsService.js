@@ -7,7 +7,7 @@ export const accountsService = {
       const { data } = await api.get('/accounts');
       return data; // { success, count, accounts }
     } catch (error) {
-      throw new Error(getErrorMessage(error));
+      throw new Error(getErrorMessage(error), { cause: error });
     }
   },
 
@@ -21,7 +21,7 @@ export const accountsService = {
       });
       return data; // { success, message, account }
     } catch (error) {
-      throw new Error(getErrorMessage(error));
+      throw new Error(getErrorMessage(error), { cause: error });
     }
   },
 
@@ -31,7 +31,7 @@ export const accountsService = {
       const { data } = await api.delete(`/accounts/${platform}`);
       return data;
     } catch (error) {
-      throw new Error(getErrorMessage(error));
+      throw new Error(getErrorMessage(error), { cause: error });
     }
   },
 };

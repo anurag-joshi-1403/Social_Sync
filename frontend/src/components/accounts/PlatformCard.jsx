@@ -1,6 +1,3 @@
-import React from 'react';
-import { PLATFORMS } from '../../context/AccountsContext.jsx';
-
 const PlatformCard = ({ platform, account, onConnect, onDisconnect }) => {
   const isConnected = Boolean(account);
 

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import { createContext, useState, useContext, useEffect } from 'react';
 import { authService } from '../services/authService.js';
 
 const AuthContext = createContext();
@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
       if (cachedUser) {
         try {
           setUser(JSON.parse(cachedUser));
-        } catch (e) {
+        } catch {
           localStorage.removeItem('user');
         }
       }
@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
         const data = await authService.me();
         setUser(data.user);
         localStorage.setItem('user', JSON.stringify(data.user));
-      } catch (error) {
+      } catch {
         // Token invalid/expired → clear everything
         localStorage.removeItem('token');
         localStorage.removeItem('user');

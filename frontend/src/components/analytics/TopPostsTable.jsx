@@ -1,4 +1,3 @@
-import React from 'react';
 import { PLATFORMS } from '../../constants/platforms.js';
 
 const TopPostsTable = ({ posts }) => {
@@ -61,13 +60,14 @@ const TopPostsTable = ({ posts }) => {
                   </td>
                   <td className="text-truncate" style={{ maxWidth: '300px' }}>
                     <div className="d-flex align-items-center">
-                      {post.image && (
-                        <img
-                          src={post.image}
-                          alt="thumb"
-                          className="me-2 rounded"
-                          style={{ width: 36, height: 36, objectFit: 'cover' }}
-                        />
+                      {post.hasImage && (
+                        <span
+                          className="me-2 rounded bg-light text-muted d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                          style={{ width: 36, height: 36 }}
+                          title="This post has an image"
+                        >
+                          <i className="bi bi-image"></i>
+                        </span>
                       )}
                       <span className="small">{post.content}</span>
                     </div>

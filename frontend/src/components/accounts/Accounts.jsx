@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PLATFORMS, useAccounts } from '../../context/AccountsContext.jsx';
+import { useAccounts } from '../../context/AccountsContext.jsx';
+import { PLATFORMS } from '../../constants/platforms.js';
 import PlatformCard from './PlatformCard.jsx';
 import ConnectModal from './ConnectModal.jsx';
 
 const Accounts = () => {
-  const { accounts, isConnected, getAccount, connectAccount, disconnectAccount } = useAccounts();
+  const { accounts, getAccount, connectAccount, disconnectAccount } = useAccounts();
   const [modalPlatform, setModalPlatform] = useState(null);
   const [toast, setToast] = useState('');
 
@@ -68,12 +69,14 @@ const Accounts = () => {
         </div>
       )}
 
-      {/* Info banner */}
-      <div className="alert alert-info d-flex align-items-start small">
-        <i className="bi bi-shield-lock me-2 fs-5"></i>
+      {/* Info banner — states plainly that these connections are simulated,
+          rather than claiming security properties the app does not yet have. */}
+      <div className="alert alert-warning d-flex align-items-start small">
+        <i className="bi bi-info-circle me-2 fs-5"></i>
         <div>
-          <strong>Secure OAuth 2.0 connection.</strong> SocialSync never stores your password.
-          Access tokens are encrypted and can be revoked anytime from your account settings.
+          <strong>Demo connections.</strong> These accounts are simulated — no real
+          OAuth handshake takes place and nothing is posted to the live platforms.
+          Scheduled posts publish inside SocialSync only.
         </div>
       </div>
 

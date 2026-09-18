@@ -1,8 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { usePosts } from '../../context/PostsContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
-import { PLATFORMS } from '../../context/AccountsContext.jsx';
+import { PLATFORMS } from '../../constants/platforms.js';
+import { postsService } from '../../services/postsService.js';
+import {
+  toLocalInputValue,
+  minScheduleValue,
+  fromLocalInputValue,
+} from '../../utils/datetime.js';
 
+// The parent passes key={post.id}, so this component remounts per post and
+// initialises its state from props directly rather than syncing in an effect.
 const PostDetailModal = ({ post, onClose }) => {
   const { updatePost, deletePost } = usePosts();
   const toast = useToast();
@@ -11,15 +19,27 @@ const PostDetailModal = ({ post, onClose }) => {
   const [caption, setCaption] = useState(post.content);
   const [hashtags, setHashtags] = useState(post.hashtags || '');
   const [scheduleTime, setScheduleTime] = useState(
-    post.scheduledTime ? post.scheduledTime.slice(0, 16) : ''
+    toLocalInputValue(post.scheduledTime)
   );
+  // List responses omit the base64 image, so fetch it for the detail view.
+  const [image, setImage] = useState(post.image || '');
 
   useEffect(() => {
-    setCaption(post.content);
-    setHashtags(post.hashtags || '');
-    setScheduleTime(post.scheduledTime ? post.scheduledTime.slice(0, 16) : '');
-    setEditMode(false);
-  }, [post]);
+    if (post.image || !post.hasImage) return;
+
+    let active = true;
+    postsService
+      .getById(post.id)
+      .then((data) => {
+        if (active) setImage(data.post.image || '');
+      })
+      .catch(() => {
+        /* the image is decorative — a failure just leaves it out */
+      });
+    return () => {
+      active = false;
+    };
+  }, [post.id, post.image, post.hasImage]);
 
   const platform = PLATFORMS.find((p) => p.id === post.platform) || PLATFORMS[0];
 
@@ -37,12 +57,24 @@ const PostDetailModal = ({ post, onClose }) => {
       return;
     }
     try {
+      const scheduledDate = fromLocalInputValue(scheduleTime);
+      if (scheduleTime && !scheduledDate) {
+        toast.error('That schedule date is not valid.');
+        return;
+      }
+      if (
+        scheduledDate &&
+        post.status === 'scheduled' &&
+        scheduledDate <= new Date()
+      ) {
+        toast.error('Please choose a future date and time.');
+        return;
+      }
+
       await updatePost(post.id, {
         content: caption,
         hashtags,
-        scheduledTime: scheduleTime
-          ? new Date(scheduleTime).toISOString()
-          : null,
+        scheduledTime: scheduledDate ? scheduledDate.toISOString() : null,
       });
       toast.success('Post updated successfully.');
       onClose();
@@ -102,9 +134,9 @@ const PostDetailModal = ({ post, onClose }) => {
           </div>
 
           <div className="modal-body">
-            {post.image && (
+            {image && (
               <img
-                src={post.image}
+                src={image}
                 alt="post"
                 className="img-fluid rounded mb-3"
                 style={{ maxHeight: '260px', objectFit: 'cover', width: '100%' }}
@@ -140,6 +172,7 @@ const PostDetailModal = ({ post, onClose }) => {
                     className="form-control"
                     value={scheduleTime}
                     onChange={(e) => setScheduleTime(e.target.value)}
+                    min={post.status === 'scheduled' ? minScheduleValue() : undefined}
                   />
                   <small className="text-muted">
                     Leave empty to keep as draft (no schedule).

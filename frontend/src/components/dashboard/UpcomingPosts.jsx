@@ -1,7 +1,6 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { usePosts } from '../../context/PostsContext.jsx';
-import { PLATFORMS } from '../../context/AccountsContext.jsx';
+import { PLATFORMS } from '../../constants/platforms.js';
 
 const UpcomingPosts = () => {
   const { posts, loading } = usePosts();

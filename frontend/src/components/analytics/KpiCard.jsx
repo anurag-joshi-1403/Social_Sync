@@ -1,4 +1,3 @@
-import React from 'react';
 
 const KpiCard = ({ title, value, icon, color, delta }) => {
   const isPositive = delta > 0;

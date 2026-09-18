@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const ConnectModal = ({ platform, onClose, onAuthorize }) => {
   const [loading, setLoading] = useState(false);

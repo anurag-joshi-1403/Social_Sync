@@ -1,21 +1,30 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import Calendar from 'react-calendar';
 import { usePosts } from '../../context/PostsContext.jsx';
 import PostList from './PostList.jsx';
 import PostDetailModal from './PostDetailModal.jsx';
 
+// Local calendar day, not UTC — `toISOString()` would put a late-evening post
+// on the following day for anyone east of Greenwich.
+const dayKey = (value) => {
+  const d = new Date(value);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate()
+  ).padStart(2, '0')}`;
+};
+
 const Schedule = () => {
-  const { posts, loading } = usePosts();
+  const { posts } = usePosts();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [filter, setFilter] = useState('all');
   const [selectedPost, setSelectedPost] = useState(null);
 
-  // Map posts by YYYY-MM-DD
+  // Map posts by YYYY-MM-DD (local)
   const postsByDate = useMemo(() => {
     const map = {};
     posts.forEach((p) => {
       if (p.scheduledTime) {
-        const key = new Date(p.scheduledTime).toISOString().slice(0, 10);
+        const key = dayKey(p.scheduledTime);
         if (!map[key]) map[key] = [];
         map[key].push(p);
       }
@@ -23,22 +32,18 @@ const Schedule = () => {
     return map;
   }, [posts]);
 
-  const selectedKey = selectedDate.toISOString().slice(0, 10);
-  const postsOnSelected = postsByDate[selectedKey] || [];
+  const postsOnSelected = postsByDate[dayKey(selectedDate)] || [];
 
   // Show a dot on days with posts
   const tileContent = ({ date, view }) => {
     if (view !== 'month') return null;
-    const key = date.toISOString().slice(0, 10);
+    const key = dayKey(date);
     const dayPosts = postsByDate[key];
     if (!dayPosts || dayPosts.length === 0) return null;
     return (
       <div className="calendar-dots">
-        {dayPosts.slice(0, 3).map((p, i) => (
-          <span
-            key={i}
-            className={`calendar-dot dot-${p.status}`}
-          ></span>
+        {dayPosts.slice(0, 3).map((p) => (
+          <span key={p.id} className={`calendar-dot dot-${p.status}`}></span>
         ))}
       </div>
     );
@@ -159,6 +164,7 @@ const Schedule = () => {
           <PostList filter={filter} onRowClick={setSelectedPost} />
           {selectedPost && (
             <PostDetailModal
+              key={selectedPost.id}
               post={selectedPost}
               onClose={() => setSelectedPost(null)}
             />

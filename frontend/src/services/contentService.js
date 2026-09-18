@@ -11,7 +11,7 @@ export const contentService = {
       });
       return data; // { success, count, options }
     } catch (error) {
-      throw new Error(getErrorMessage(error));
+      throw new Error(getErrorMessage(error), { cause: error });
     }
   },
 };

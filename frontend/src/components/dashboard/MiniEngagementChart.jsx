@@ -1,9 +1,24 @@
-import React, { useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { generateDailyData } from '../../services/mockAnalytics.js';
+import { analyticsService } from '../../services/analyticsService.js';
 
 const MiniEngagementChart = () => {
-    const data = useMemo(() => generateDailyData(14), []);
+    const [data, setData] = useState([]);
+
+    useEffect(() => {
+        let active = true;
+        analyticsService
+            .summary(14)
+            .then((result) => {
+                if (active) setData(result.daily);
+            })
+            .catch(() => {
+                if (active) setData([]);
+            });
+        return () => {
+            active = false;
+        };
+    }, []);
 
     return (
         <div className="card shadow-sm h-100">
@@ -46,15 +61,6 @@ const MiniEngagementChart = () => {
                         />
                     </AreaChart>
                 </ResponsiveContainer>
-            </div>
-            {/* Bottom row: Mini chart + Upcoming posts */}
-            <div className="row g-3 mt-3">
-                <div className="col-lg-7">
-                    <MiniEngagementChart />
-                </div>
-                <div className="col-lg-5">
-                    <UpcomingPosts />
-                </div>
             </div>
         </div>
     );

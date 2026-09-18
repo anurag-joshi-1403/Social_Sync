@@ -11,7 +11,7 @@ export const authService = {
       });
       return data; // { success, token, user }
     } catch (error) {
-      throw new Error(getErrorMessage(error));
+      throw new Error(getErrorMessage(error), { cause: error });
     }
   },
 
@@ -21,7 +21,7 @@ export const authService = {
       const { data } = await api.post('/auth/login', { email, password });
       return data; // { success, token, user }
     } catch (error) {
-      throw new Error(getErrorMessage(error));
+      throw new Error(getErrorMessage(error), { cause: error });
     }
   },
 
@@ -31,7 +31,7 @@ export const authService = {
       const { data } = await api.get('/auth/me');
       return data; // { success, user }
     } catch (error) {
-      throw new Error(getErrorMessage(error));
+      throw new Error(getErrorMessage(error), { cause: error });
     }
   },
 };

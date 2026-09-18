@@ -14,7 +14,7 @@ export const postsService = {
       const { data } = await api.get(url);
       return data; // { success, count, posts }
     } catch (error) {
-      throw new Error(getErrorMessage(error));
+      throw new Error(getErrorMessage(error), { cause: error });
     }
   },
 
@@ -24,7 +24,7 @@ export const postsService = {
       const { data } = await api.get('/posts/stats');
       return data; // { success, stats: { total, scheduled, ... } }
     } catch (error) {
-      throw new Error(getErrorMessage(error));
+      throw new Error(getErrorMessage(error), { cause: error });
     }
   },
 
@@ -34,7 +34,7 @@ export const postsService = {
       const { data } = await api.post('/posts', post);
       return data; // { success, post }
     } catch (error) {
-      throw new Error(getErrorMessage(error));
+      throw new Error(getErrorMessage(error), { cause: error });
     }
   },
 
@@ -44,7 +44,7 @@ export const postsService = {
       const { data } = await api.get(`/posts/${id}`);
       return data;
     } catch (error) {
-      throw new Error(getErrorMessage(error));
+      throw new Error(getErrorMessage(error), { cause: error });
     }
   },
 
@@ -54,7 +54,7 @@ export const postsService = {
       const { data } = await api.put(`/posts/${id}`, updates);
       return data;
     } catch (error) {
-      throw new Error(getErrorMessage(error));
+      throw new Error(getErrorMessage(error), { cause: error });
     }
   },
 
@@ -64,7 +64,7 @@ export const postsService = {
       const { data } = await api.delete(`/posts/${id}`);
       return data;
     } catch (error) {
-      throw new Error(getErrorMessage(error));
+      throw new Error(getErrorMessage(error), { cause: error });
     }
   },
 };

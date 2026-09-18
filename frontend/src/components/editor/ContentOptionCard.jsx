@@ -1,10 +1,3 @@
-const platformIcon = {
-  instagram: 'bi-instagram',
-  facebook: 'bi-facebook',
-  twitter: 'bi-twitter-x',
-  linkedin: 'bi-linkedin',
-};
-
 const ContentOptionCard = ({ option, selected, onSelect }) => {
   return (
     <div

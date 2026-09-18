@@ -1,7 +1,6 @@
-import React from 'react';
 import { usePosts } from '../../context/PostsContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
-import { PLATFORMS } from '../../context/AccountsContext.jsx';
+import { PLATFORMS } from '../../constants/platforms.js';
 
 const statusBadge = {
   published: 'success',
@@ -64,13 +63,16 @@ const PostList = ({ filter = 'all', onRowClick }) => {
               >
                 <td className="text-truncate" style={{ maxWidth: '320px' }}>
                   <div className="d-flex align-items-center">
-                    {post.image && (
-                      <img
-                        src={post.image}
-                        alt="thumb"
-                        className="me-2 rounded"
-                        style={{ width: 40, height: 40, objectFit: 'cover' }}
-                      />
+                    {/* The list response omits base64 images; the full image
+                        loads in the detail modal. */}
+                    {post.hasImage && (
+                      <span
+                        className="me-2 rounded bg-light text-muted d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                        style={{ width: 40, height: 40 }}
+                        title="This post has an image"
+                      >
+                        <i className="bi bi-image"></i>
+                      </span>
                     )}
                     <span>{post.content}</span>
                   </div>

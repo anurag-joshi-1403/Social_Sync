@@ -1,4 +1,4 @@
-import React, {
+import {
   createContext,
   useContext,
   useState,
@@ -43,10 +43,14 @@ export const PostsProvider = ({ children }) => {
   }, []);
 
   // ---------- Load posts when user changes ----------
+  // Fetching external data keyed on auth state is exactly what effects are
+  // for; the lint rule guards against cascading *render* state, which a
+  // request kickoff and a logout reset are not.
   useEffect(() => {
     if (authLoading) return;
 
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchPosts();
     } else {
       setPosts([]);

@@ -1,16 +1,22 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { usePosts } from '../../context/PostsContext.jsx';
+import { useAccounts } from '../../context/AccountsContext.jsx';
+import { PLATFORMS } from '../../constants/platforms.js';
 import { contentService } from '../../services/contentService.js';
+import { minScheduleValue, fromLocalInputValue } from '../../utils/datetime.js';
 import ContentOptionCard from './ContentOptionCard.jsx';
-import { useAccounts, PLATFORMS } from '../../context/AccountsContext.jsx';
+
+// Kept in step with the Post model's image cap and the 2mb express.json limit.
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
 const PostEditor = () => {
   const {
     register,
     handleSubmit,
     watch,
+    getValues,
     reset,
     formState: { errors },
   } = useForm({
@@ -69,8 +75,23 @@ const PostEditor = () => {
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showError('That file is not an image. Please choose a JPG, PNG or WebP.');
+      e.target.value = '';
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_BYTES) {
+      const mb = (file.size / (1024 * 1024)).toFixed(1);
+      showError(`Image is ${mb}MB — please choose one under 2MB.`);
+      e.target.value = '';
+      return;
+    }
+
     const reader = new FileReader();
     reader.onloadend = () => setImagePreview(reader.result);
+    reader.onerror = () => showError('Could not read that image. Please try another.');
     reader.readAsDataURL(file);
   };
 
@@ -84,8 +105,8 @@ const PostEditor = () => {
       await addPost({
         content: finalCaption,
         hashtags: finalHashtags,
-        platform: watch('platform'),
-        tone: watch('tone'),
+        platform: getValues('platform'),
+        tone: getValues('tone'),
         image: imagePreview,
         status: 'draft',
         scheduledTime: null,
@@ -107,8 +128,8 @@ const PostEditor = () => {
       showError('Please choose a date and time for the post.');
       return;
     }
-    const scheduledDate = new Date(scheduleTime);
-    if (scheduledDate <= new Date()) {
+    const scheduledDate = fromLocalInputValue(scheduleTime);
+    if (!scheduledDate || scheduledDate <= new Date()) {
       showError('Please choose a future date and time.');
       return;
     }
@@ -116,8 +137,8 @@ const PostEditor = () => {
       await addPost({
         content: finalCaption,
         hashtags: finalHashtags,
-        platform: watch('platform'),
-        tone: watch('tone'),
+        platform: getValues('platform'),
+        tone: getValues('tone'),
         image: imagePreview,
         status: 'scheduled',
         scheduledTime: scheduledDate.toISOString(),
@@ -356,9 +377,7 @@ const PostEditor = () => {
                     className="form-control"
                     value={scheduleTime}
                     onChange={(e) => setScheduleTime(e.target.value)}
-                    min={new Date(Date.now() + 60000)
-                      .toISOString()
-                      .slice(0, 16)}
+                    min={minScheduleValue()}
                   />
                   <small className="text-muted">
                     Choose a future date and time. Required for scheduling.

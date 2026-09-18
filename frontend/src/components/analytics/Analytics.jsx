@@ -1,12 +1,12 @@
-import React, { useMemo, useState } from 'react';
-import { usePosts } from '../../context/PostsContext.jsx';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAccounts } from '../../context/AccountsContext.jsx';
-import { generateDailyData, getTotals, getPlatformBreakdown, getTopPosts } from '../../services/mockAnalytics.js';
+import { PLATFORMS } from '../../constants/platforms.js';
+import { analyticsService } from '../../services/analyticsService.js';
 import KpiCard from './KpiCard.jsx';
 import EngagementChart from './EngagementChart.jsx';
 import PlatformPieChart from './PlatformPieChart.jsx';
 import TopPostsTable from './TopPostsTable.jsx';
-
 
 const RANGE_OPTIONS = [
   { label: '7 days', days: 7 },
@@ -14,20 +14,60 @@ const RANGE_OPTIONS = [
   { label: '30 days', days: 30 },
 ];
 
+const EMPTY_TOTALS = { likes: 0, comments: 0, shares: 0, reach: 0, engagement: 0 };
+
 const Analytics = () => {
-  const { posts } = usePosts();
   const { accounts } = useAccounts();
   const [rangeDays, setRangeDays] = useState(30);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
 
-  const connectedPlatformIds = accounts.map((a) => a.platform);
+  // Loading is derived, not stored: whenever the data in hand is for a
+  // different range than the one selected, a request is still in flight.
+  // This keeps the effect free of synchronous setState calls and shows the
+  // previous range's numbers instead of flashing empty while fetching.
+  const loading = !error && data?.range !== rangeDays;
 
-  const dailyData = useMemo(() => generateDailyData(rangeDays), [rangeDays]);
-  const totals = useMemo(() => getTotals(dailyData), [dailyData]);
+  useEffect(() => {
+    let active = true;
+
+    analyticsService
+      .summary(rangeDays)
+      .then((result) => {
+        if (!active) return;
+        setError('');
+        setData(result);
+      })
+      .catch((err) => {
+        if (active) setError(err.message || 'Failed to load analytics');
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [rangeDays]);
+
+  const dailyData = data?.daily || [];
+  const totals = data?.totals || EMPTY_TOTALS;
+  const topPosts = data?.topPosts || [];
+  const postsTracked = data?.postsTracked || 0;
+
+  // Attach display metadata to the platform engagement the API returned.
   const pieData = useMemo(
-    () => getPlatformBreakdown(connectedPlatformIds),
-    [connectedPlatformIds.join(',')]
+    () =>
+      (data?.platforms || []).map((entry) => {
+        const platform =
+          PLATFORMS.find((p) => p.id === entry.platformId) || PLATFORMS[0];
+        return {
+          name: platform.name,
+          value: entry.value,
+          color: platform.color,
+          icon: platform.icon,
+          platformId: entry.platformId,
+        };
+      }),
+    [data]
   );
-  const topPosts = useMemo(() => getTopPosts(posts), [posts]);
 
   const engagementRate =
     totals.reach > 0 ? ((totals.engagement / totals.reach) * 100).toFixed(2) : '0.00';
@@ -59,46 +99,74 @@ const Analytics = () => {
         </div>
       </div>
 
-      {/* Info banner if no accounts */}
-      {accounts.length === 0 && (
+      {error && (
+        <div className="alert alert-danger d-flex align-items-center small">
+          <i className="bi bi-exclamation-circle me-2 fs-5"></i>
+          <div>{error}</div>
+        </div>
+      )}
+
+      {loading && (
+        <div className="alert alert-light d-flex align-items-center small">
+          <span className="spinner-border spinner-border-sm me-2" />
+          Loading your engagement data...
+        </div>
+      )}
+
+      {/* Nothing published yet — explain why the numbers are zero */}
+      {!loading && !error && postsTracked === 0 && (
         <div className="alert alert-info d-flex align-items-center small">
           <i className="bi bi-info-circle me-2 fs-5"></i>
           <div>
-            You're viewing <strong>sample analytics data</strong>. Connect accounts in the{' '}
-            <a href="/accounts" className="alert-link">Accounts page</a> to see your real metrics (once live).
+            No published posts in this range yet, so there is nothing to measure.{' '}
+            {accounts.length === 0 ? (
+              <>
+                Connect an account on the{' '}
+                <Link to="/accounts" className="alert-link">
+                  Accounts page
+                </Link>{' '}
+                to get started.
+              </>
+            ) : (
+              <>
+                Schedule a post from the{' '}
+                <Link to="/editor" className="alert-link">
+                  editor
+                </Link>{' '}
+                and its metrics will appear here once it publishes.
+              </>
+            )}
           </div>
         </div>
       )}
 
       {/* KPI Cards */}
       <div className="row g-3 mb-4">
+        {/* No `delta` — period-over-period comparison is not computed yet, and
+            a hardcoded percentage would be a fabricated number. */}
         <KpiCard
           title="Total Likes"
           value={totals.likes}
           icon="bi-hand-thumbs-up"
           color="primary"
-          delta={12}
         />
         <KpiCard
           title="Total Comments"
           value={totals.comments}
           icon="bi-chat-dots"
           color="success"
-          delta={8}
         />
         <KpiCard
           title="Total Shares"
           value={totals.shares}
           icon="bi-share"
           color="warning"
-          delta={-3}
         />
         <KpiCard
           title="Total Reach"
           value={totals.reach}
           icon="bi-people"
           color="info"
-          delta={15}
         />
       </div>
 
@@ -137,8 +205,8 @@ const Analytics = () => {
                 <i className="bi bi-file-earmark-text"></i>
               </div>
               <div>
-                <div className="text-muted small">Total Posts Tracked</div>
-                <div className="fs-5 fw-bold">{posts.length}</div>
+                <div className="text-muted small">Posts Published</div>
+                <div className="fs-5 fw-bold">{postsTracked}</div>
               </div>
             </div>
           </div>
